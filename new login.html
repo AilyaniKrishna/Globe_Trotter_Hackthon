@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobeTrotter — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --deep:#0B2E30;
+    --deep2:#082022;
+    --deep3:#0F3A3C;
+    --coral:#E8623B;
+    --coral-light:#F2825F;
+    --gold:#D4A24C;
+    --sand:#F6F1E4;
+    --sand-dim:#EDE6D4;
+    --ink:#1B2B2A;
+    --ink-soft:#5B6C6A;
+    --mist:#9FC6C4;
+    --line:#D9D0BA;
+    --error:#C4432A;
+    --ok:#3F7A5E;
+    --radius:14px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:var(--sand);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+  }
+
+  .map-panel{
+    position:relative;
+    background:
+      radial-gradient(ellipse at 20% 15%, rgba(159,198,196,0.16), transparent 55%),
+      linear-gradient(160deg, var(--deep3) 0%, var(--deep) 55%, var(--deep2) 100%);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 52px;
+    color:var(--sand);
+    min-height:100%;
+  }
+
+  .dotgrid{
+    position:absolute;
+    inset:0;
+    background-image: radial-gradient(rgba(246,241,228,0.14) 1px, transparent 1.4px);
+    background-size: 26px 26px;
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 40%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 40%, transparent 85%);
+  }
+
+  .brand{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-mark{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:1.5px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:18px;height:18px;}
+  .brand-word{
+    font-family:'Fraunces',serif;
+    font-size:21px;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+
+  .map-stage{
+    position:relative;
+    z-index:2;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:20px 0;
+  }
+  .map-stage svg{ width:100%; height:auto; max-width:560px; overflow:visible; }
+
+  .route-path{
+    fill:none;
+    stroke:var(--gold);
+    stroke-width:1.6;
+    stroke-dasharray:6 7;
+    stroke-linecap:round;
+    opacity:0.85;
+    animation:dash-move 22s linear infinite;
+  }
+  @keyframes dash-move{ to{ stroke-dashoffset:-500; } }
+
+  .pin{ transform-origin:center; }
+  .pin circle.dot{
+    fill:var(--coral);
+    stroke:var(--sand);
+    stroke-width:1.6;
+  }
+  .pin circle.ring{
+    fill:none;
+    stroke:var(--coral);
+    stroke-width:1;
+    opacity:0.55;
+    animation:pulse-ring 2.6s ease-out infinite;
+  }
+  .pin:nth-of-type(2) circle.ring{ animation-delay:0.5s; }
+  .pin:nth-of-type(3) circle.ring{ animation-delay:1s; }
+  .pin:nth-of-type(4) circle.ring{ animation-delay:1.5s; }
+  .pin:nth-of-type(5) circle.ring{ animation-delay:2s; }
+  @keyframes pulse-ring{
+    0%{ r:5; opacity:0.6; }
+    100%{ r:13; opacity:0; }
+  }
+
+  .pin-label{
+    font-family:'Space Mono', monospace;
+    font-size:9.5px;
+    fill:var(--sand);
+    opacity:0.82;
+  }
+  .pin-coords{
+    font-family:'Space Mono', monospace;
+    font-size:7.5px;
+    fill:var(--mist);
+    opacity:0.7;
+  }
+
+  .plane{
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+  }
+
+  .map-footer{
+    position:relative;
+    z-index:2;
+  }
+  .map-quote{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:26px;
+    line-height:1.35;
+    max-width:420px;
+    color:var(--sand);
+  }
+  .map-quote span{ color:var(--gold); }
+  .map-sub{
+    margin-top:14px;
+    font-size:13px;
+    color:var(--mist);
+    letter-spacing:0.02em;
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .map-sub b{ color:var(--sand); font-weight:600; }
+
+  .form-panel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px 40px;
+    background:var(--sand);
+    position:relative;
+  }
+
+  .form-wrap{
+    width:100%;
+    max-width:420px;
+  }
+
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--coral);
+    margin-bottom:10px;
+    display:block;
+  }
+
+  .headline{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:32px;
+    line-height:1.15;
+    margin:0 0 8px 0;
+    color:var(--ink);
+  }
+  .subhead{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    margin:0 0 28px 0;
+    line-height:1.5;
+  }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    background:var(--sand-dim);
+    border-radius:11px;
+    padding:4px;
+    margin-bottom:28px;
+    position:relative;
+  }
+  .tab-btn{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:10px 0;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-radius:8px;
+    transition:color 0.2s ease;
+    position:relative;
+    z-index:1;
+  }
+  .tab-btn.active{ color:var(--sand); }
+  .tab-slider{
+    position:absolute;
+    top:4px; bottom:4px; left:4px;
+    width:calc(50% - 4px);
+    background:var(--deep);
+    border-radius:8px;
+    transition:transform 0.28s cubic-bezier(.65,0,.35,1);
+    z-index:0;
+  }
+  .tabs[data-active="signup"] .tab-slider{ transform:translateX(100%); }
+
+  form{ display:none; }
+  form.active{ display:block; animation:fade-in 0.35s ease; }
+  @keyframes fade-in{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .field{ margin-bottom:16px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:6px;
+    letter-spacing:0.01em;
+  }
+  label .opt{ color:var(--ink-soft); font-weight:400; }
+
+  .input-shell{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+  .input-shell svg{
+    position:absolute;
+    left:13px;
+    width:16px; height:16px;
+    color:var(--ink-soft);
+    pointer-events:none;
+  }
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="tel"]{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:12px 14px 12px 40px;
+    border:1.4px solid var(--line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+    transition:border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  input::placeholder{ color:#B7AF9B; }
+  input:focus{
+    border-color:var(--deep);
+    box-shadow:0 0 0 3px rgba(11,46,48,0.10);
+  }
+  input.invalid{
+    border-color:var(--error);
+  }
+  input.invalid:focus{
+    box-shadow:0 0 0 3px rgba(196,67,42,0.12);
+  }
+
+  .toggle-eye{
+    position:absolute;
+    right:12px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex;
+    padding:4px;
+  }
+  .toggle-eye svg{ position:static; width:16px; height:16px; }
+
+  .err-msg{
+    font-size:12px;
+    color:var(--error);
+    margin-top:5px;
+    min-height:14px;
+    display:none;
+  }
+  .err-msg.show{ display:block; }
+
+  .gender-group{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px;
+  }
+  .gender-btn{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 8px;
+    border-radius:9px;
+    border:1.4px solid var(--line);
+    background:#fff;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.15s ease;
+    text-align:center;
+  }
+  .gender-btn:hover{ border-color:var(--deep); color:var(--ink); }
+  .gender-btn.selected{
+    background:var(--deep);
+    border-color:var(--deep);
+    color:var(--sand);
+  }
+
+  .row-inline{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    font-size:13px;
+  }
+  .checkbox-line{ display:flex; align-items:center; gap:8px; color:var(--ink-soft); }
+  .checkbox-line input{ width:15px; height:15px; accent-color:var(--deep); }
+  .link{
+    color:var(--deep);
+    font-weight:600;
+    text-decoration:none;
+    cursor:pointer;
+    background:none;
+    border:none;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    padding:0;
+  }
+  .link:hover{ color:var(--coral); }
+
+  .submit-btn{
+    width:100%;
+    padding:13px 0;
+    border:none;
+    border-radius:9px;
+    background:var(--coral);
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    transition:background 0.18s ease, transform 0.12s ease;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .submit-btn:hover{ background:var(--coral-light); }
+  .submit-btn:active{ transform:scale(0.99); }
+  .submit-btn:disabled{ opacity:0.6; cursor:not-allowed; }
+  .submit-btn svg{ width:16px; height:16px; }
+
+  .switch-line{
+    text-align:center;
+    margin-top:22px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+
+  .shake{ animation:shake 0.4s ease; }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-1px); }
+    20%,80%{ transform:translateX(2px); }
+    30%,50%,70%{ transform:translateX(-4px); }
+    40%,60%{ transform:translateX(4px); }
+  }
+
+  .toast{
+    position:fixed;
+    top:22px; right:22px;
+    background:var(--deep);
+    color:var(--sand);
+    padding:14px 18px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    transform:translateY(-14px);
+    opacity:0;
+    pointer-events:none;
+    transition:all 0.35s cubic-bezier(.34,1.56,.64,1);
+    z-index:50;
+  }
+  .toast.show{ transform:translateY(0); opacity:1; }
+  .toast svg{ width:18px; height:18px; color:var(--gold); flex-shrink:0; }
+
+  @media (max-width: 900px){
+    .app{ grid-template-columns:1fr; }
+    .map-panel{ min-height:340px; padding:32px 28px; }
+    .map-quote{ font-size:20px; }
+    .form-panel{ padding:36px 24px 60px; }
+  }
+  @media (max-width:480px){
+    .field-row{ grid-template-columns:1fr; }
+    .gender-group{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="map-panel">
+    <div class="dotgrid"></div>
+
+    <div class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4A24C" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 5.7 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.7-4-9s1.5-6.4 4-9z"/></svg>
+      </span>
+      <span class="brand-word">GlobeTrotter</span>
+    </div>
+
+    <div class="map-stage">
+      <svg viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg">
+        <path class="route-path" d="M 60 300 C 120 200, 160 260, 210 180 S 320 90, 380 140 S 470 70, 500 60"/>
+
+        <g class="pin" transform="translate(60,300)">
+          <circle class="ring" cx="0" cy="0" r="6"/>
+          <circle class="dot" cx="0" cy="0" r="4.5"/>
+          <text class="pin-label" x="10" y="4">Lima</text>
+          <text class="pin-coords" x="10" y="15">12.0°S, 77.0°W</text>
+        </g>
+
+        <g class="pin" transform="translate(210,180)">
+          <circle class="ring" cx="0" cy="0" r="6"/>
+          <circle class="dot" cx="0" cy="0" r="4.5"/>
+          <text class="pin-label" x="10" y="4">Marrakech</text>
+          <text class="pin-coords" x="10" y="15">31.6°N, 7.9°W</text>
+        </g>
+
+        <g class="pin" transform="translate(380,140)">
+          <circle class="ring" cx="0" cy="0" r="6"/>
+          <circle class="dot" cx="0" cy="0" r="4.5"/>
+          <text class="pin-label" x="10" y="-9">Kyoto</text>
+          <text class="pin-coords" x="10" y="2">35.0°N, 135.8°E</text>
+        </g>
+
+        <g class="pin" transform="translate(500,60)">
+          <circle class="ring" cx="0" cy="0" r="6"/>
+          <circle class="dot" cx="0" cy="0" r="4.5"/>
+          <text class="pin-label" x="-52" y="-10">Bali</text>
+          <text class="pin-coords" x="-70" y="2">8.3°S, 115.1°E</text>
+        </g>
+
+        <g class="pin" transform="translate(320,90)">
+          <circle class="ring" cx="0" cy="0" r="5.5"/>
+          <circle class="dot" cx="0" cy="0" r="4"/>
+        </g>
+
+        <g class="plane">
+          <path d="M-6,-2 L6,0 L-6,2 L-3,0 Z" fill="#F6F1E4"/>
+          <animateMotion dur="7s" repeatCount="indefinite"
+            path="M 60 300 C 120 200, 160 260, 210 180 S 320 90, 380 140 S 470 70, 500 60"
+            rotate="auto"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="map-footer">
+      <p class="map-quote">Every trip starts as a line on a map — <span>we help you draw it.</span></p>
+      <div class="map-sub">
+        <span><b>40+</b> countries covered</span>
+        <span><b>12k</b> itineraries built</span>
+        <span><b>Free</b> to start</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-wrap">
+
+      <span class="eyebrow" id="eyebrow-text">Trip planning, sorted</span>
+      <h1 class="headline" id="headline-text">Welcome back</h1>
+      <p class="subhead" id="subhead-text">Log in to pick up your itineraries right where you left them.</p>
+
+      <div class="tabs" data-active="login" id="tabs">
+        <div class="tab-slider"></div>
+        <button type="button" class="tab-btn active" id="tab-login">Log in</button>
+        <button type="button" class="tab-btn" id="tab-signup">Sign up</button>
+      </div>
+
+      <form id="login-form" class="active" novalidate>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <span class="err-msg" id="login-email-err">Enter a valid email address.</span>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="toggle-eye" data-target="login-password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <span class="err-msg" id="login-password-err">Enter your password.</span>
+        </div>
+
+        <div class="row-inline">
+          <label class="checkbox-line"><input type="checkbox"> Remember me</label>
+          <button type="button" class="link" id="forgot-link">Forgot password?</button>
+        </div>
+
+        <button type="submit" class="submit-btn" id="login-submit-btn">
+          Log in
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <p class="switch-line">New to GlobeTrotter? <button type="button" class="link" id="go-signup">Create an account</button></p>
+      </form>
+
+      <form id="signup-form" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="su-first-name">First name</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+              <input type="text" id="su-first-name" placeholder="First name" autocomplete="given-name">
+            </div>
+            <span class="err-msg" id="su-first-name-err">Enter your first name.</span>
+          </div>
+          <div class="field">
+            <label for="su-last-name">Last name</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+              <input type="text" id="su-last-name" placeholder="Last name" autocomplete="family-name">
+            </div>
+            <span class="err-msg" id="su-last-name-err">Enter your last name.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="su-email">Email</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <span class="err-msg" id="su-email-err">Enter a valid email address.</span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="su-password">Password</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" id="su-password" placeholder="8+ characters" autocomplete="new-password">
+              <button type="button" class="toggle-eye" data-target="su-password">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <span class="err-msg" id="su-password-err">At least 8 characters.</span>
+          </div>
+          <div class="field">
+            <label for="su-confirm">Confirm password</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" id="su-confirm" placeholder="Repeat password" autocomplete="new-password">
+              <button type="button" class="toggle-eye" data-target="su-confirm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <span class="err-msg" id="su-confirm-err">Passwords don't match.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="su-country">Country</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 5.7 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.7-4-9s1.5-6.4 4-9z"/></svg>
+              <input type="text" id="su-country" list="country-list" placeholder="e.g. India" autocomplete="country-name">
+            </div>
+            <datalist id="country-list">
+              <option value="India"><option value="United States"><option value="United Kingdom">
+              <option value="Canada"><option value="Australia"><option value="Germany">
+              <option value="France"><option value="Japan"><option value="Brazil">
+              <option value="South Africa"><option value="Singapore"><option value="UAE">
+            </datalist>
+            <span class="err-msg" id="su-country-err">Tell us your country.</span>
+          </div>
+          <div class="field">
+            <label for="su-city">City</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 21V9l6-4 6 4v12"/><path d="M10 21v-6h4v6"/></svg>
+              <input type="text" id="su-city" placeholder="e.g. Ahmedabad" autocomplete="address-level2">
+            </div>
+            <span class="err-msg" id="su-city-err">Tell us your city.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="su-phone">Phone number</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .6 3a2 2 0 0 1-.5 2L7.9 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2-.5c1 .3 2 .5 3 .6a2 2 0 0 1 1.8 2z"/></svg>
+            <input type="tel" id="su-phone" placeholder="+91 98765 43210" autocomplete="tel">
+          </div>
+          <span class="err-msg" id="su-phone-err">Enter a valid phone number.</span>
+        </div>
+
+        <div class="field">
+          <label>Gender <span class="opt">(select one)</span></label>
+          <div class="gender-group" id="gender-group">
+            <button type="button" class="gender-btn" data-value="Woman">Woman</button>
+            <button type="button" class="gender-btn" data-value="Man">Man</button>
+            <button type="button" class="gender-btn" data-value="Non-binary">Non-binary</button>
+            <button type="button" class="gender-btn" data-value="Prefer not to say">Prefer not to say</button>
+          </div>
+          <span class="err-msg" id="su-gender-err">Please select an option.</span>
+        </div>
+
+        <div class="row-inline" style="margin-top:6px;">
+          <label class="checkbox-line"><input type="checkbox" id="su-terms"> I agree to the Terms &amp; Privacy Policy</label>
+        </div>
+        <span class="err-msg" id="su-terms-err" style="margin-top:-12px;">Please accept the terms to continue.</span>
+
+        <button type="submit" class="submit-btn" id="signup-submit-btn" style="margin-top:6px;">
+          Create account
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <p class="switch-line">Already have an account? <button type="button" class="link" id="go-login">Log in</button></p>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toast-text">Success</span>
+</div>
+
+<script>
+  // ============================================
+  // SUPABASE SETUP
+  // ============================================
+  const supabaseUrl = 'https://fmgezbpcemzrekvvkrjc.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZ2V6YnBjZW16cmVrdnZrcmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDMzNzMsImV4cCI6MjEwMjkxOTM3M30.mD9QlRMPLwbr74AnA8iN8gbU-4S4KJEv_oOweG6b5LM';
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  const tabs = document.getElementById('tabs');
+  const tabLogin = document.getElementById('tab-login');
+  const tabSignup = document.getElementById('tab-signup');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const eyebrow = document.getElementById('eyebrow-text');
+  const headline = document.getElementById('headline-text');
+  const subhead = document.getElementById('subhead-text');
+
+  function showLogin(){
+    tabs.dataset.active = 'login';
+    tabLogin.classList.add('active');
+    tabSignup.classList.remove('active');
+    loginForm.classList.add('active');
+    signupForm.classList.remove('active');
+    eyebrow.textContent = 'Trip planning, sorted';
+    headline.textContent = 'Welcome back';
+    subhead.textContent = 'Log in to pick up your itineraries right where you left them.';
+  }
+  function showSignup(){
+    tabs.dataset.active = 'signup';
+    tabSignup.classList.add('active');
+    tabLogin.classList.remove('active');
+    signupForm.classList.add('active');
+    loginForm.classList.remove('active');
+    eyebrow.textContent = 'Start your next journey';
+    headline.textContent = 'Create your account';
+    subhead.textContent = 'A few details and your first itinerary is minutes away.';
+  }
+  tabLogin.addEventListener('click', showLogin);
+  tabSignup.addEventListener('click', showSignup);
+  document.getElementById('go-signup').addEventListener('click', showSignup);
+  document.getElementById('go-login').addEventListener('click', showLogin);
+
+  document.querySelectorAll('.toggle-eye').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = document.getElementById(btn.dataset.target);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+  });
+
+  let selectedGender = null;
+  document.querySelectorAll('.gender-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.gender-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedGender = btn.dataset.value;
+      setError('su-gender', false);
+    });
+  });
+
+  function setError(fieldId, show){
+    const err = document.getElementById(fieldId + '-err');
+    const input = document.getElementById(fieldId);
+    if(err) err.classList.toggle('show', show);
+    if(input) input.classList.toggle('invalid', show);
+  }
+  function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function isPhone(v){ return /^[+\d][\d\s-]{6,}$/.test(v.trim()); }
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    document.getElementById('toast-text').textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 3200);
+  }
+
+  // ---------- Login: real Supabase call ----------
+  loginForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    let ok = true;
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+
+    if(!isEmail(email)){ setError('login-email', true); ok = false; } else setError('login-email', false);
+    if(!pass){ setError('login-password', true); ok = false; } else setError('login-password', false);
+
+    if(!ok){
+      loginForm.closest('.form-wrap').classList.add('shake');
+      setTimeout(()=> loginForm.closest('.form-wrap').classList.remove('shake'), 400);
+      return;
+    }
+
+    const btn = document.getElementById('login-submit-btn');
+    btn.disabled = true;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+
+    btn.disabled = false;
+
+    if(error){
+      toast(error.message);
+      loginForm.closest('.form-wrap').classList.add('shake');
+      setTimeout(()=> loginForm.closest('.form-wrap').classList.remove('shake'), 400);
+      return;
+    }
+
+    toast('Logged in — welcome back!');
+    setTimeout(()=> { window.location.href = 'dashboard.html'; }, 1200); // change to your real dashboard filename
+  });
+
+  // ---------- Signup: real Supabase call ----------
+  signupForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    let ok = true;
+
+    const firstName = document.getElementById('su-first-name').value.trim();
+    const lastName = document.getElementById('su-last-name').value.trim();
+    const email = document.getElementById('su-email').value;
+    const pass = document.getElementById('su-password').value;
+    const confirm = document.getElementById('su-confirm').value;
+    const country = document.getElementById('su-country').value.trim();
+    const city = document.getElementById('su-city').value.trim();
+    const phone = document.getElementById('su-phone').value.trim();
+    const terms = document.getElementById('su-terms').checked;
+
+    if(!firstName){ setError('su-first-name', true); ok = false; } else setError('su-first-name', false);
+    if(!lastName){ setError('su-last-name', true); ok = false; } else setError('su-last-name', false);
+    if(!isEmail(email)){ setError('su-email', true); ok = false; } else setError('su-email', false);
+    if(pass.length < 8){ setError('su-password', true); ok = false; } else setError('su-password', false);
+    if(confirm !== pass || !confirm){ setError('su-confirm', true); ok = false; } else setError('su-confirm', false);
+    if(!country){ setError('su-country', true); ok = false; } else setError('su-country', false);
+    if(!city){ setError('su-city', true); ok = false; } else setError('su-city', false);
+    if(!isPhone(phone)){ setError('su-phone', true); ok = false; } else setError('su-phone', false);
+
+    const genderErr = document.getElementById('su-gender-err');
+    if(!selectedGender){ genderErr.classList.add('show'); ok = false; } else genderErr.classList.remove('show');
+
+    const termsErr = document.getElementById('su-terms-err');
+    if(!terms){ termsErr.classList.add('show'); ok = false; } else termsErr.classList.remove('show');
+
+    if(!ok){
+      signupForm.closest('.form-wrap').classList.add('shake');
+      setTimeout(()=> signupForm.closest('.form-wrap').classList.remove('shake'), 400);
+      return;
+    }
+
+    const btn = document.getElementById('signup-submit-btn');
+    btn.disabled = true;
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          country: country,
+          city: city,
+          phone_number : phone,
+          gender: selectedGender
+        }
+      }
+    });
+
+    btn.disabled = false;
+
+    if(error){
+      toast(error.message);
+      signupForm.closest('.form-wrap').classList.add('shake');
+      setTimeout(()=> signupForm.closest('.form-wrap').classList.remove('shake'), 400);
+      return;
+    }
+
+    toast('Account created — bon voyage!');
+    setTimeout(()=> { window.location.href = 'dashboard.html'; }, 1200); // change to your real dashboard filename
+  });
+
+  document.getElementById('forgot-link').addEventListener('click', async ()=>{
+    const email = document.getElementById('login-email').value;
+    if(!isEmail(email)){
+      toast('Enter your email above first');
+      return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+    toast(error ? error.message : 'Password reset link sent — check email');
+  });
+</script>
+
+</body>
+</html>
