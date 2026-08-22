@@ -1,0 +1,108 @@
+{
+  "users": [
+    {
+      "id": "admin",
+      "name": "Alex Morgan",
+      "email": "alex@voyagera.app",
+      "password": "demo123",
+      "city": "London",
+      "country": "United Kingdom",
+      "bio": "Weekend explorer and thoughtful trip planner.",
+      "role": "admin"
+    }
+  ],
+  "trips": [
+    {
+      "id": "t_21c89085",
+      "userId": "admin",
+      "title": "QA coastal escape",
+      "place": "Porto, Portugal",
+      "start": "2026-10-10",
+      "end": "2026-10-13",
+      "budget": 900,
+      "status": "planned",
+      "cover": "porto",
+      "days": []
+    },
+    {
+      "id": "t1",
+      "userId": "admin",
+      "title": "Lisbon long weekend",
+      "place": "Lisbon, Portugal",
+      "start": "2026-09-18",
+      "end": "2026-09-21",
+      "budget": 1200,
+      "status": "upcoming",
+      "cover": "lisbon",
+      "days": [
+        {
+          "date": "2026-09-18",
+          "items": [
+            {
+              "time": "10:00",
+              "title": "Pastéis de Belém",
+              "cost": 12
+            },
+            {
+              "time": "14:00",
+              "title": "Alfama walking tour",
+              "cost": 25
+            },
+            {
+              "time": "19:30",
+              "title": "Fado dinner",
+              "cost": 55
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "userId": "admin",
+      "title": "Kyoto in spring",
+      "place": "Kyoto, Japan",
+      "start": "2026-04-08",
+      "end": "2026-04-13",
+      "budget": 2100,
+      "status": "completed",
+      "cover": "kyoto",
+      "days": []
+    },
+    {
+      "id": "t3",
+      "userId": "admin",
+      "title": "New York city break",
+      "place": "New York, USA",
+      "start": "2026-11-04",
+      "end": "2026-11-08",
+      "budget": 1800,
+      "status": "planned",
+      "cover": "newyork",
+      "days": []
+    }
+  ],
+  "posts": [
+    {
+      "id": "p1",
+      "user": "Maya Chen",
+      "city": "Lisbon",
+      "text": "Skip the queue at Time Out Market by arriving before 12. The rooftop views at sunset are worth it!",
+      "likes": 34
+    },
+    {
+      "id": "p2",
+      "user": "Jordan Hill",
+      "city": "Kyoto",
+      "text": "My favorite quiet stop: the moss gardens at Gio-ji. Bring cash and take the early bus.",
+      "likes": 52
+    },
+    {
+      "id": "p3",
+      "user": "Elena Rossi",
+      "city": "New York",
+      "text": "A rainy-day tip: the Whitney has wonderful views even when the sky is moody.",
+      "likes": 19
+    }
+  ]
+}
